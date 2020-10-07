@@ -1,0 +1,29 @@
+---
+title: demo_ggplot
+author: Jimrpy
+date: '2020-10-07'
+slug: demo-ggplot
+categories: [ggplot, R]
+tags: [ggplot]
+---
+
+# Test the R code
+
+## Load packages
+```{r load-package}
+library(ggplot2)
+library(DT)
+```
+
+## Show iris data
+```{r iris-data}
+datatable(iris)
+```
+
+## Plot data
+```{r plot-iris}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
+  geom_point() +
+  theme_void()
+
+```

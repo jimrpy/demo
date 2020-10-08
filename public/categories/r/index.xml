@@ -6,7 +6,19 @@
     <description>Recent content in R on Demo website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 07 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/categories/r/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 08 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/categories/r/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Create awesome pivot table with R</title>
+      <link>/2020/10/08/create-awesome-pivot-table/</link>
+      <pubDate>Thu, 08 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/2020/10/08/create-awesome-pivot-table/</guid>
+      <description>Libraries  tidyverse A collection of lots of tidy packages from Rstudio, e.g. ggplot2, dplyr, stringr, purrr, forcat …
+ tidyquant A package integrated the quantitative analysis functionality of zoo, xts, quantmod, TTR, and PerformanceAnalytics, in a tidy way.
+ gt A package for creating attractive tables.
+  library(tidyverse) library(tidyquant) library(DT) library(gt) You can check the functions in a package by ls(&#34;package:pkgname&#34;). For example.</description>
+    </item>
+    
     <item>
       <title>demo_ggplot</title>
       <link>/2020/10/07/demo-ggplot/</link>

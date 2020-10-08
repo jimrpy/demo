@@ -1,0 +1,5758 @@
+---
+title: Create awesome pivot table with R
+author: ~
+date: '2020-10-08'
+slug: create-awesome-pivot-table
+categories: [R]
+tags: [R, pivot table, tidyquant]
+---
+
+<script src="/rmarkdown-libs/kePrint/kePrint.js"></script>
+<link href="/rmarkdown-libs/lightable/lightable.css" rel="stylesheet" />
+
+
+<div id="libraries" class="section level1">
+<h1>1. Libraries</h1>
+<ul>
+<li><p><code>tidyverse</code> A collection of lots of tidy packages from Rstudio, e.g. <code>ggplot2</code>, <code>dplyr</code>, <code>stringr</code>, <code>purrr</code>, <code>forcat</code> …</p></li>
+<li><p><code>tidyquant</code> A package integrated the quantitative analysis functionality of <code>zoo</code>, <code>xts</code>, <code>quantmod</code>, <code>TTR</code>, and <code>PerformanceAnalytics</code>, in a tidy way.</p></li>
+<li><p><code>gt</code> A package for creating attractive tables.</p></li>
+</ul>
+<pre class="r"><code>library(tidyverse)
+library(tidyquant)
+library(kableExtra)
+library(gt)</code></pre>
+<p>You can check the functions in a package by <code>ls("package:pkgname")</code>. For example.</p>
+<pre class="r"><code>ls(&quot;package:tidyquant&quot;) %&gt;% head()</code></pre>
+<pre><code>## [1] &quot;%&gt;%&quot;         &quot;ABS&quot;         &quot;AS_DATE&quot;     &quot;AS_DATETIME&quot; &quot;av_api_key&quot; 
+## [6] &quot;AVERAGE&quot;</code></pre>
+</div>
+<div id="demo-raw-data" class="section level1">
+<h1>2. Demo raw data</h1>
+<p>Stock data are retrieved here for demonstration with <code>tq-get</code> from <code>tidyquant</code> package, <em>AAPL</em>, <em>GOOG</em>, <em>NFLX</em>, <em>NVDA</em>.</p>
+<pre class="r"><code>stock_raw &lt;- c(&quot;AAPL&quot;, &quot;GOOG&quot;, &quot;NFLX&quot;, &quot;NVDA&quot;) %&gt;% 
+  tq_get(from = &quot;2015-01-01&quot;, to = &quot;2020-10-01&quot;) %&gt;% 
+  select(symbol, date, adjusted)</code></pre>
+<p>Show the first and the last 50 records.</p>
+<pre class="r"><code>stock_raw %&gt;% 
+  slice(1:50, (nrow(.)-49):nrow(.)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;400px&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:400px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+symbol
+</th>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+date
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+adjusted
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-02
+</td>
+<td style="text-align:right;">
+24.94150
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-05
+</td>
+<td style="text-align:right;">
+24.23886
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-06
+</td>
+<td style="text-align:right;">
+24.24115
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-07
+</td>
+<td style="text-align:right;">
+24.58106
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-08
+</td>
+<td style="text-align:right;">
+25.52552
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-09
+</td>
+<td style="text-align:right;">
+25.55289
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-12
+</td>
+<td style="text-align:right;">
+24.92325
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-13
+</td>
+<td style="text-align:right;">
+25.14454
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-14
+</td>
+<td style="text-align:right;">
+25.04873
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-15
+</td>
+<td style="text-align:right;">
+24.36889
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-16
+</td>
+<td style="text-align:right;">
+24.17955
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-20
+</td>
+<td style="text-align:right;">
+24.80235
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-21
+</td>
+<td style="text-align:right;">
+24.99169
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-22
+</td>
+<td style="text-align:right;">
+25.64187
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-23
+</td>
+<td style="text-align:right;">
+25.77418
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-26
+</td>
+<td style="text-align:right;">
+25.80156
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-27
+</td>
+<td style="text-align:right;">
+24.89816
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-28
+</td>
+<td style="text-align:right;">
+26.30573
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-29
+</td>
+<td style="text-align:right;">
+27.12472
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-01-30
+</td>
+<td style="text-align:right;">
+26.72777
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-02
+</td>
+<td style="text-align:right;">
+27.06312
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-03
+</td>
+<td style="text-align:right;">
+27.06768
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-04
+</td>
+<td style="text-align:right;">
+27.27528
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-05
+</td>
+<td style="text-align:right;">
+27.46995
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-06
+</td>
+<td style="text-align:right;">
+27.23863
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-09
+</td>
+<td style="text-align:right;">
+27.41957
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-10
+</td>
+<td style="text-align:right;">
+27.94634
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-11
+</td>
+<td style="text-align:right;">
+28.60137
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-12
+</td>
+<td style="text-align:right;">
+28.96324
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-13
+</td>
+<td style="text-align:right;">
+29.10524
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-17
+</td>
+<td style="text-align:right;">
+29.27701
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-18
+</td>
+<td style="text-align:right;">
+29.48085
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-19
+</td>
+<td style="text-align:right;">
+29.41901
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-20
+</td>
+<td style="text-align:right;">
+29.65949
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-23
+</td>
+<td style="text-align:right;">
+30.46110
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-24
+</td>
+<td style="text-align:right;">
+30.27100
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-25
+</td>
+<td style="text-align:right;">
+29.49688
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-26
+</td>
+<td style="text-align:right;">
+29.87020
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-02-27
+</td>
+<td style="text-align:right;">
+29.42130
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-02
+</td>
+<td style="text-align:right;">
+29.56559
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-03
+</td>
+<td style="text-align:right;">
+29.62743
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-04
+</td>
+<td style="text-align:right;">
+29.43962
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-05
+</td>
+<td style="text-align:right;">
+28.95179
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-06
+</td>
+<td style="text-align:right;">
+28.99530
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-09
+</td>
+<td style="text-align:right;">
+29.11898
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-10
+</td>
+<td style="text-align:right;">
+28.51663
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-11
+</td>
+<td style="text-align:right;">
+27.99673
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-12
+</td>
+<td style="text-align:right;">
+28.50288
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-13
+</td>
+<td style="text-align:right;">
+28.30592
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+2015-03-16
+</td>
+<td style="text-align:right;">
+28.61740
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-22
+</td>
+<td style="text-align:right;">
+417.42511
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-23
+</td>
+<td style="text-align:right;">
+405.06882
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-24
+</td>
+<td style="text-align:right;">
+407.65802
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-27
+</td>
+<td style="text-align:right;">
+416.73529
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-28
+</td>
+<td style="text-align:right;">
+408.49777
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-29
+</td>
+<td style="text-align:right;">
+418.49478
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-30
+</td>
+<td style="text-align:right;">
+424.43301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-07-31
+</td>
+<td style="text-align:right;">
+424.46301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-03
+</td>
+<td style="text-align:right;">
+440.27829
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-04
+</td>
+<td style="text-align:right;">
+448.97565
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-05
+</td>
+<td style="text-align:right;">
+451.33496
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-06
+</td>
+<td style="text-align:right;">
+453.28439
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-07
+</td>
+<td style="text-align:right;">
+447.84601
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-10
+</td>
+<td style="text-align:right;">
+446.46643
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-11
+</td>
+<td style="text-align:right;">
+433.87018
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-12
+</td>
+<td style="text-align:right;">
+457.47311
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-13
+</td>
+<td style="text-align:right;">
+457.58310
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-14
+</td>
+<td style="text-align:right;">
+462.42166
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-17
+</td>
+<td style="text-align:right;">
+493.33243
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-18
+</td>
+<td style="text-align:right;">
+490.28330
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-19
+</td>
+<td style="text-align:right;">
+485.39477
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-20
+</td>
+<td style="text-align:right;">
+485.49475
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-21
+</td>
+<td style="text-align:right;">
+507.18826
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-24
+</td>
+<td style="text-align:right;">
+508.65781
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-25
+</td>
+<td style="text-align:right;">
+509.84747
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-26
+</td>
+<td style="text-align:right;">
+510.76721
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-27
+</td>
+<td style="text-align:right;">
+504.97891
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-28
+</td>
+<td style="text-align:right;">
+525.75269
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-08-31
+</td>
+<td style="text-align:right;">
+534.81995
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-01
+</td>
+<td style="text-align:right;">
+552.84003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-02
+</td>
+<td style="text-align:right;">
+573.85999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-03
+</td>
+<td style="text-align:right;">
+520.62000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-04
+</td>
+<td style="text-align:right;">
+504.89999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-08
+</td>
+<td style="text-align:right;">
+476.51999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-09
+</td>
+<td style="text-align:right;">
+508.60001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-10
+</td>
+<td style="text-align:right;">
+492.47000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-11
+</td>
+<td style="text-align:right;">
+486.57999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-14
+</td>
+<td style="text-align:right;">
+514.89001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-15
+</td>
+<td style="text-align:right;">
+519.64001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-16
+</td>
+<td style="text-align:right;">
+500.57999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-17
+</td>
+<td style="text-align:right;">
+498.54001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-18
+</td>
+<td style="text-align:right;">
+487.57001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-21
+</td>
+<td style="text-align:right;">
+500.69000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-22
+</td>
+<td style="text-align:right;">
+505.51001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-23
+</td>
+<td style="text-align:right;">
+484.95001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-24
+</td>
+<td style="text-align:right;">
+493.92001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-25
+</td>
+<td style="text-align:right;">
+514.95001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-28
+</td>
+<td style="text-align:right;">
+521.40002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-29
+</td>
+<td style="text-align:right;">
+529.03003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+2020-09-30
+</td>
+<td style="text-align:right;">
+541.21997
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="pivot-table" class="section level1">
+<h1>3. Pivot table</h1>
+<p>Here create 3 different pivot tables to show the percent change by year for the given stocks.</p>
+<div id="row-stockname-month-column-year." class="section level2">
+<h2>3.1 Row: stockname, month; Column: year.</h2>
+<pre class="r"><code>stock_raw  %&gt;%
+    pivot_table(
+        .rows    = c(~ symbol, ~ MONTH(date, label = TRUE)),
+        .columns = ~ YEAR(date),
+        .values  = ~ MEDIAN(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1:2, ~ c(&quot;Symbol&quot;, &quot;Month&quot;)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;400px&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:400px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+Symbol
+</th>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+Month
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2015
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2016
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2017
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2018
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2019
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+2020
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+25.02021
+</td>
+<td style="text-align:right;">
+22.59618
+</td>
+<td style="text-align:right;">
+28.43191
+</td>
+<td style="text-align:right;">
+42.01243
+</td>
+<td style="text-align:right;">
+37.62130
+</td>
+<td style="text-align:right;">
+77.63441
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+29.10524
+</td>
+<td style="text-align:right;">
+22.38866
+</td>
+<td style="text-align:right;">
+32.16285
+</td>
+<td style="text-align:right;">
+40.49957
+</td>
+<td style="text-align:right;">
+41.99081
+</td>
+<td style="text-align:right;">
+79.54336
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+28.94721
+</td>
+<td style="text-align:right;">
+24.46720
+</td>
+<td style="text-align:right;">
+33.34674
+</td>
+<td style="text-align:right;">
+42.41845
+</td>
+<td style="text-align:right;">
+45.72240
+</td>
+<td style="text-align:right;">
+63.35148
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+29.05256
+</td>
+<td style="text-align:right;">
+25.31983
+</td>
+<td style="text-align:right;">
+34.14473
+</td>
+<td style="text-align:right;">
+41.14806
+</td>
+<td style="text-align:right;">
+49.15674
+</td>
+<td style="text-align:right;">
+68.71476
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+29.63619
+</td>
+<td style="text-align:right;">
+22.03333
+</td>
+<td style="text-align:right;">
+36.64409
+</td>
+<td style="text-align:right;">
+45.44227
+</td>
+<td style="text-align:right;">
+46.56679
+</td>
+<td style="text-align:right;">
+77.92825
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+29.34755
+</td>
+<td style="text-align:right;">
+22.82191
+</td>
+<td style="text-align:right;">
+34.88603
+</td>
+<td style="text-align:right;">
+45.87101
+</td>
+<td style="text-align:right;">
+47.96505
+</td>
+<td style="text-align:right;">
+87.50597
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+28.84388
+</td>
+<td style="text-align:right;">
+23.00967
+</td>
+<td style="text-align:right;">
+35.70407
+</td>
+<td style="text-align:right;">
+46.37383
+</td>
+<td style="text-align:right;">
+50.42002
+</td>
+<td style="text-align:right;">
+95.44292
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+26.54056
+</td>
+<td style="text-align:right;">
+25.48456
+</td>
+<td style="text-align:right;">
+38.28973
+</td>
+<td style="text-align:right;">
+51.99916
+</td>
+<td style="text-align:right;">
+50.70813
+</td>
+<td style="text-align:right;">
+115.01000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+26.19864
+</td>
+<td style="text-align:right;">
+26.59596
+</td>
+<td style="text-align:right;">
+38.09670
+</td>
+<td style="text-align:right;">
+53.94437
+</td>
+<td style="text-align:right;">
+54.15890
+</td>
+<td style="text-align:right;">
+113.49000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+25.83477
+</td>
+<td style="text-align:right;">
+27.44309
+</td>
+<td style="text-align:right;">
+37.53960
+</td>
+<td style="text-align:right;">
+53.78592
+</td>
+<td style="text-align:right;">
+58.38818
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+27.41634
+</td>
+<td style="text-align:right;">
+26.21309
+</td>
+<td style="text-align:right;">
+41.70878
+</td>
+<td style="text-align:right;">
+46.82114
+</td>
+<td style="text-align:right;">
+65.15550
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+25.73422
+</td>
+<td style="text-align:right;">
+27.47014
+</td>
+<td style="text-align:right;">
+41.30392
+</td>
+<td style="text-align:right;">
+40.47836
+</td>
+<td style="text-align:right;">
+69.38135
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+507.64626
+</td>
+<td style="text-align:right;">
+714.71997
+</td>
+<td style="text-align:right;">
+806.11002
+</td>
+<td style="text-align:right;">
+1129.79004
+</td>
+<td style="text-align:right;">
+1073.90002
+</td>
+<td style="text-align:right;">
+1439.19995
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+535.46985
+</td>
+<td style="text-align:right;">
+698.66501
+</td>
+<td style="text-align:right;">
+819.23999
+</td>
+<td style="text-align:right;">
+1094.80005
+</td>
+<td style="text-align:right;">
+1115.13000
+</td>
+<td style="text-align:right;">
+1485.10999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+556.85864
+</td>
+<td style="text-align:right;">
+732.01001
+</td>
+<td style="text-align:right;">
+831.50000
+</td>
+<td style="text-align:right;">
+1095.06006
+</td>
+<td style="text-align:right;">
+1184.26001
+</td>
+<td style="text-align:right;">
+1154.28497
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+537.69379
+</td>
+<td style="text-align:right;">
+743.09003
+</td>
+<td style="text-align:right;">
+837.16998
+</td>
+<td style="text-align:right;">
+1029.27002
+</td>
+<td style="text-align:right;">
+1217.87000
+</td>
+<td style="text-align:right;">
+1262.46997
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+536.53000
+</td>
+<td style="text-align:right;">
+711.12000
+</td>
+<td style="text-align:right;">
+933.11499
+</td>
+<td style="text-align:right;">
+1077.12500
+</td>
+<td style="text-align:right;">
+1156.86005
+</td>
+<td style="text-align:right;">
+1379.83997
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+534.29999
+</td>
+<td style="text-align:right;">
+713.45499
+</td>
+<td style="text-align:right;">
+952.83502
+</td>
+<td style="text-align:right;">
+1136.88000
+</td>
+<td style="text-align:right;">
+1080.64502
+</td>
+<td style="text-align:right;">
+1436.16998
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+601.70499
+</td>
+<td style="text-align:right;">
+727.36502
+</td>
+<td style="text-align:right;">
+945.49500
+</td>
+<td style="text-align:right;">
+1186.95996
+</td>
+<td style="text-align:right;">
+1142.34497
+</td>
+<td style="text-align:right;">
+1514.59503
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+637.60999
+</td>
+<td style="text-align:right;">
+773.17999
+</td>
+<td style="text-align:right;">
+922.90002
+</td>
+<td style="text-align:right;">
+1224.77002
+</td>
+<td style="text-align:right;">
+1180.14496
+</td>
+<td style="text-align:right;">
+1518.44995
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+621.34998
+</td>
+<td style="text-align:right;">
+774.21002
+</td>
+<td style="text-align:right;">
+928.80502
+</td>
+<td style="text-align:right;">
+1173.37000
+</td>
+<td style="text-align:right;">
+1227.12000
+</td>
+<td style="text-align:right;">
+1519.28003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+651.47498
+</td>
+<td style="text-align:right;">
+785.94000
+</td>
+<td style="text-align:right;">
+981.67001
+</td>
+<td style="text-align:right;">
+1101.16003
+</td>
+<td style="text-align:right;">
+1243.01001
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+732.50500
+</td>
+<td style="text-align:right;">
+764.47998
+</td>
+<td style="text-align:right;">
+1028.06995
+</td>
+<td style="text-align:right;">
+1055.81006
+</td>
+<td style="text-align:right;">
+1304.00500
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+752.07498
+</td>
+<td style="text-align:right;">
+789.28998
+</td>
+<td style="text-align:right;">
+1047.27002
+</td>
+<td style="text-align:right;">
+1039.45996
+</td>
+<td style="text-align:right;">
+1345.02002
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+49.01000
+</td>
+<td style="text-align:right;">
+107.06000
+</td>
+<td style="text-align:right;">
+133.48000
+</td>
+<td style="text-align:right;">
+220.46001
+</td>
+<td style="text-align:right;">
+328.89999
+</td>
+<td style="text-align:right;">
+338.92001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+66.58572
+</td>
+<td style="text-align:right;">
+90.10000
+</td>
+<td style="text-align:right;">
+142.60001
+</td>
+<td style="text-align:right;">
+267.42999
+</td>
+<td style="text-align:right;">
+356.97000
+</td>
+<td style="text-align:right;">
+371.70999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+61.66857
+</td>
+<td style="text-align:right;">
+98.85500
+</td>
+<td style="text-align:right;">
+142.64999
+</td>
+<td style="text-align:right;">
+316.48001
+</td>
+<td style="text-align:right;">
+358.82001
+</td>
+<td style="text-align:right;">
+357.22000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+79.50000
+</td>
+<td style="text-align:right;">
+103.81000
+</td>
+<td style="text-align:right;">
+143.83000
+</td>
+<td style="text-align:right;">
+307.78000
+</td>
+<td style="text-align:right;">
+367.64999
+</td>
+<td style="text-align:right;">
+413.54999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+85.94286
+</td>
+<td style="text-align:right;">
+90.84000
+</td>
+<td style="text-align:right;">
+157.60500
+</td>
+<td style="text-align:right;">
+328.36000
+</td>
+<td style="text-align:right;">
+355.02499
+</td>
+<td style="text-align:right;">
+434.90500
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+93.86000
+</td>
+<td style="text-align:right;">
+93.98500
+</td>
+<td style="text-align:right;">
+154.15000
+</td>
+<td style="text-align:right;">
+390.39002
+</td>
+<td style="text-align:right;">
+357.12500
+</td>
+<td style="text-align:right;">
+435.30501
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+106.66500
+</td>
+<td style="text-align:right;">
+94.63500
+</td>
+<td style="text-align:right;">
+171.68000
+</td>
+<td style="text-align:right;">
+379.48001
+</td>
+<td style="text-align:right;">
+364.21500
+</td>
+<td style="text-align:right;">
+493.07500
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+121.15000
+</td>
+<td style="text-align:right;">
+95.87000
+</td>
+<td style="text-align:right;">
+169.98000
+</td>
+<td style="text-align:right;">
+344.50000
+</td>
+<td style="text-align:right;">
+300.95499
+</td>
+<td style="text-align:right;">
+492.31000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+99.48000
+</td>
+<td style="text-align:right;">
+97.38000
+</td>
+<td style="text-align:right;">
+181.85500
+</td>
+<td style="text-align:right;">
+365.35998
+</td>
+<td style="text-align:right;">
+288.56499
+</td>
+<td style="text-align:right;">
+490.64999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+105.89000
+</td>
+<td style="text-align:right;">
+106.28000
+</td>
+<td style="text-align:right;">
+195.37500
+</td>
+<td style="text-align:right;">
+333.16000
+</td>
+<td style="text-align:right;">
+276.82001
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+114.05500
+</td>
+<td style="text-align:right;">
+117.51000
+</td>
+<td style="text-align:right;">
+195.71001
+</td>
+<td style="text-align:right;">
+288.75000
+</td>
+<td style="text-align:right;">
+294.60500
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+119.89500
+</td>
+<td style="text-align:right;">
+124.57000
+</td>
+<td style="text-align:right;">
+187.81000
+</td>
+<td style="text-align:right;">
+266.76999
+</td>
+<td style="text-align:right;">
+309.98999
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+19.04836
+</td>
+<td style="text-align:right;">
+28.08973
+</td>
+<td style="text-align:right;">
+103.87871
+</td>
+<td style="text-align:right;">
+222.64328
+</td>
+<td style="text-align:right;">
+144.46939
+</td>
+<td style="text-align:right;">
+245.23787
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+21.32043
+</td>
+<td style="text-align:right;">
+27.60525
+</td>
+<td style="text-align:right;">
+109.58504
+</td>
+<td style="text-align:right;">
+239.48735
+</td>
+<td style="text-align:right;">
+153.61023
+</td>
+<td style="text-align:right;">
+267.52768
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+21.88099
+</td>
+<td style="text-align:right;">
+32.29809
+</td>
+<td style="text-align:right;">
+102.70877
+</td>
+<td style="text-align:right;">
+240.06297
+</td>
+<td style="text-align:right;">
+168.23836
+</td>
+<td style="text-align:right;">
+247.63786
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+21.45574
+</td>
+<td style="text-align:right;">
+35.62809
+</td>
+<td style="text-align:right;">
+99.69115
+</td>
+<td style="text-align:right;">
+224.56834
+</td>
+<td style="text-align:right;">
+187.46701
+</td>
+<td style="text-align:right;">
+283.73560
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+20.56658
+</td>
+<td style="text-align:right;">
+41.44331
+</td>
+<td style="text-align:right;">
+129.09587
+</td>
+<td style="text-align:right;">
+245.94579
+</td>
+<td style="text-align:right;">
+158.34520
+</td>
+<td style="text-align:right;">
+330.80002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+21.01132
+</td>
+<td style="text-align:right;">
+46.09111
+</td>
+<td style="text-align:right;">
+150.06064
+</td>
+<td style="text-align:right;">
+260.50302
+</td>
+<td style="text-align:right;">
+149.12991
+</td>
+<td style="text-align:right;">
+366.46538
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+19.21507
+</td>
+<td style="text-align:right;">
+52.29076
+</td>
+<td style="text-align:right;">
+161.81708
+</td>
+<td style="text-align:right;">
+247.63086
+</td>
+<td style="text-align:right;">
+167.50823
+</td>
+<td style="text-align:right;">
+408.74272
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+22.06502
+</td>
+<td style="text-align:right;">
+60.70966
+</td>
+<td style="text-align:right;">
+163.57018
+</td>
+<td style="text-align:right;">
+255.69580
+</td>
+<td style="text-align:right;">
+160.78876
+</td>
+<td style="text-align:right;">
+485.39477
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+22.36727
+</td>
+<td style="text-align:right;">
+62.27846
+</td>
+<td style="text-align:right;">
+169.98914
+</td>
+<td style="text-align:right;">
+270.16583
+</td>
+<td style="text-align:right;">
+178.06728
+</td>
+<td style="text-align:right;">
+505.51001
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+26.73542
+</td>
+<td style="text-align:right;">
+66.63953
+</td>
+<td style="text-align:right;">
+193.44343
+</td>
+<td style="text-align:right;">
+238.03732
+</td>
+<td style="text-align:right;">
+193.80437
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+30.15166
+</td>
+<td style="text-align:right;">
+86.79716
+</td>
+<td style="text-align:right;">
+209.52241
+</td>
+<td style="text-align:right;">
+188.35884
+</td>
+<td style="text-align:right;">
+209.26199
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+32.26404
+</td>
+<td style="text-align:right;">
+97.53977
+</td>
+<td style="text-align:right;">
+192.52633
+</td>
+<td style="text-align:right;">
+145.68298
+</td>
+<td style="text-align:right;">
+224.84549
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="row-year-month-column-stockname." class="section level2">
+<h2>3.2 Row: year, month; Column: stockname.</h2>
+<pre class="r"><code>stock_raw  %&gt;%
+    pivot_table(
+        .rows    = c(~ YEAR(date), ~ MONTH(date, label = TRUE)),
+        .columns = ~ symbol,
+        .values  = ~ MEDIAN(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1:2, ~ c(&quot;Year&quot;, &quot;Month&quot;)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;400px&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:400px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Year
+</th>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+Month
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+AAPL
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+GOOG
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+NFLX
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+NVDA
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+25.02021
+</td>
+<td style="text-align:right;">
+507.6463
+</td>
+<td style="text-align:right;">
+49.01000
+</td>
+<td style="text-align:right;">
+19.04836
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+29.10524
+</td>
+<td style="text-align:right;">
+535.4698
+</td>
+<td style="text-align:right;">
+66.58572
+</td>
+<td style="text-align:right;">
+21.32043
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+28.94721
+</td>
+<td style="text-align:right;">
+556.8586
+</td>
+<td style="text-align:right;">
+61.66857
+</td>
+<td style="text-align:right;">
+21.88099
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+29.05256
+</td>
+<td style="text-align:right;">
+537.6938
+</td>
+<td style="text-align:right;">
+79.50000
+</td>
+<td style="text-align:right;">
+21.45574
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+29.63619
+</td>
+<td style="text-align:right;">
+536.5300
+</td>
+<td style="text-align:right;">
+85.94286
+</td>
+<td style="text-align:right;">
+20.56658
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+29.34755
+</td>
+<td style="text-align:right;">
+534.3000
+</td>
+<td style="text-align:right;">
+93.86000
+</td>
+<td style="text-align:right;">
+21.01132
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+28.84388
+</td>
+<td style="text-align:right;">
+601.7050
+</td>
+<td style="text-align:right;">
+106.66500
+</td>
+<td style="text-align:right;">
+19.21507
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+26.54056
+</td>
+<td style="text-align:right;">
+637.6100
+</td>
+<td style="text-align:right;">
+121.15000
+</td>
+<td style="text-align:right;">
+22.06502
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+26.19864
+</td>
+<td style="text-align:right;">
+621.3500
+</td>
+<td style="text-align:right;">
+99.48000
+</td>
+<td style="text-align:right;">
+22.36727
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+25.83477
+</td>
+<td style="text-align:right;">
+651.4750
+</td>
+<td style="text-align:right;">
+105.89000
+</td>
+<td style="text-align:right;">
+26.73542
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+27.41634
+</td>
+<td style="text-align:right;">
+732.5050
+</td>
+<td style="text-align:right;">
+114.05500
+</td>
+<td style="text-align:right;">
+30.15166
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+25.73422
+</td>
+<td style="text-align:right;">
+752.0750
+</td>
+<td style="text-align:right;">
+119.89500
+</td>
+<td style="text-align:right;">
+32.26404
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+22.59618
+</td>
+<td style="text-align:right;">
+714.7200
+</td>
+<td style="text-align:right;">
+107.06000
+</td>
+<td style="text-align:right;">
+28.08973
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+22.38866
+</td>
+<td style="text-align:right;">
+698.6650
+</td>
+<td style="text-align:right;">
+90.10000
+</td>
+<td style="text-align:right;">
+27.60525
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+24.46720
+</td>
+<td style="text-align:right;">
+732.0100
+</td>
+<td style="text-align:right;">
+98.85500
+</td>
+<td style="text-align:right;">
+32.29809
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+25.31983
+</td>
+<td style="text-align:right;">
+743.0900
+</td>
+<td style="text-align:right;">
+103.81000
+</td>
+<td style="text-align:right;">
+35.62809
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+22.03333
+</td>
+<td style="text-align:right;">
+711.1200
+</td>
+<td style="text-align:right;">
+90.84000
+</td>
+<td style="text-align:right;">
+41.44331
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+22.82191
+</td>
+<td style="text-align:right;">
+713.4550
+</td>
+<td style="text-align:right;">
+93.98500
+</td>
+<td style="text-align:right;">
+46.09111
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+23.00967
+</td>
+<td style="text-align:right;">
+727.3650
+</td>
+<td style="text-align:right;">
+94.63500
+</td>
+<td style="text-align:right;">
+52.29076
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+25.48456
+</td>
+<td style="text-align:right;">
+773.1800
+</td>
+<td style="text-align:right;">
+95.87000
+</td>
+<td style="text-align:right;">
+60.70966
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+26.59596
+</td>
+<td style="text-align:right;">
+774.2100
+</td>
+<td style="text-align:right;">
+97.38000
+</td>
+<td style="text-align:right;">
+62.27846
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+27.44309
+</td>
+<td style="text-align:right;">
+785.9400
+</td>
+<td style="text-align:right;">
+106.28000
+</td>
+<td style="text-align:right;">
+66.63953
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+26.21309
+</td>
+<td style="text-align:right;">
+764.4800
+</td>
+<td style="text-align:right;">
+117.51000
+</td>
+<td style="text-align:right;">
+86.79716
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+27.47014
+</td>
+<td style="text-align:right;">
+789.2900
+</td>
+<td style="text-align:right;">
+124.57000
+</td>
+<td style="text-align:right;">
+97.53977
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+28.43191
+</td>
+<td style="text-align:right;">
+806.1100
+</td>
+<td style="text-align:right;">
+133.48000
+</td>
+<td style="text-align:right;">
+103.87871
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+32.16285
+</td>
+<td style="text-align:right;">
+819.2400
+</td>
+<td style="text-align:right;">
+142.60001
+</td>
+<td style="text-align:right;">
+109.58504
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+33.34674
+</td>
+<td style="text-align:right;">
+831.5000
+</td>
+<td style="text-align:right;">
+142.64999
+</td>
+<td style="text-align:right;">
+102.70877
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+34.14473
+</td>
+<td style="text-align:right;">
+837.1700
+</td>
+<td style="text-align:right;">
+143.83000
+</td>
+<td style="text-align:right;">
+99.69115
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+36.64409
+</td>
+<td style="text-align:right;">
+933.1150
+</td>
+<td style="text-align:right;">
+157.60500
+</td>
+<td style="text-align:right;">
+129.09587
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+34.88603
+</td>
+<td style="text-align:right;">
+952.8350
+</td>
+<td style="text-align:right;">
+154.15000
+</td>
+<td style="text-align:right;">
+150.06064
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+35.70407
+</td>
+<td style="text-align:right;">
+945.4950
+</td>
+<td style="text-align:right;">
+171.68000
+</td>
+<td style="text-align:right;">
+161.81708
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+38.28973
+</td>
+<td style="text-align:right;">
+922.9000
+</td>
+<td style="text-align:right;">
+169.98000
+</td>
+<td style="text-align:right;">
+163.57018
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+38.09670
+</td>
+<td style="text-align:right;">
+928.8050
+</td>
+<td style="text-align:right;">
+181.85500
+</td>
+<td style="text-align:right;">
+169.98914
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+37.53960
+</td>
+<td style="text-align:right;">
+981.6700
+</td>
+<td style="text-align:right;">
+195.37500
+</td>
+<td style="text-align:right;">
+193.44343
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+41.70878
+</td>
+<td style="text-align:right;">
+1028.0699
+</td>
+<td style="text-align:right;">
+195.71001
+</td>
+<td style="text-align:right;">
+209.52241
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+41.30392
+</td>
+<td style="text-align:right;">
+1047.2700
+</td>
+<td style="text-align:right;">
+187.81000
+</td>
+<td style="text-align:right;">
+192.52633
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+42.01243
+</td>
+<td style="text-align:right;">
+1129.7900
+</td>
+<td style="text-align:right;">
+220.46001
+</td>
+<td style="text-align:right;">
+222.64328
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+40.49957
+</td>
+<td style="text-align:right;">
+1094.8000
+</td>
+<td style="text-align:right;">
+267.42999
+</td>
+<td style="text-align:right;">
+239.48735
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+42.41845
+</td>
+<td style="text-align:right;">
+1095.0601
+</td>
+<td style="text-align:right;">
+316.48001
+</td>
+<td style="text-align:right;">
+240.06297
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+41.14806
+</td>
+<td style="text-align:right;">
+1029.2700
+</td>
+<td style="text-align:right;">
+307.78000
+</td>
+<td style="text-align:right;">
+224.56834
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+45.44227
+</td>
+<td style="text-align:right;">
+1077.1250
+</td>
+<td style="text-align:right;">
+328.36000
+</td>
+<td style="text-align:right;">
+245.94579
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+45.87101
+</td>
+<td style="text-align:right;">
+1136.8800
+</td>
+<td style="text-align:right;">
+390.39002
+</td>
+<td style="text-align:right;">
+260.50302
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+46.37383
+</td>
+<td style="text-align:right;">
+1186.9600
+</td>
+<td style="text-align:right;">
+379.48001
+</td>
+<td style="text-align:right;">
+247.63086
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+51.99916
+</td>
+<td style="text-align:right;">
+1224.7700
+</td>
+<td style="text-align:right;">
+344.50000
+</td>
+<td style="text-align:right;">
+255.69580
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+53.94437
+</td>
+<td style="text-align:right;">
+1173.3700
+</td>
+<td style="text-align:right;">
+365.35998
+</td>
+<td style="text-align:right;">
+270.16583
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+53.78592
+</td>
+<td style="text-align:right;">
+1101.1600
+</td>
+<td style="text-align:right;">
+333.16000
+</td>
+<td style="text-align:right;">
+238.03732
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+46.82114
+</td>
+<td style="text-align:right;">
+1055.8101
+</td>
+<td style="text-align:right;">
+288.75000
+</td>
+<td style="text-align:right;">
+188.35884
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+40.47836
+</td>
+<td style="text-align:right;">
+1039.4600
+</td>
+<td style="text-align:right;">
+266.76999
+</td>
+<td style="text-align:right;">
+145.68298
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+37.62130
+</td>
+<td style="text-align:right;">
+1073.9000
+</td>
+<td style="text-align:right;">
+328.89999
+</td>
+<td style="text-align:right;">
+144.46939
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+41.99081
+</td>
+<td style="text-align:right;">
+1115.1300
+</td>
+<td style="text-align:right;">
+356.97000
+</td>
+<td style="text-align:right;">
+153.61023
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+45.72240
+</td>
+<td style="text-align:right;">
+1184.2600
+</td>
+<td style="text-align:right;">
+358.82001
+</td>
+<td style="text-align:right;">
+168.23836
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+49.15674
+</td>
+<td style="text-align:right;">
+1217.8700
+</td>
+<td style="text-align:right;">
+367.64999
+</td>
+<td style="text-align:right;">
+187.46701
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+46.56679
+</td>
+<td style="text-align:right;">
+1156.8600
+</td>
+<td style="text-align:right;">
+355.02499
+</td>
+<td style="text-align:right;">
+158.34520
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+47.96505
+</td>
+<td style="text-align:right;">
+1080.6450
+</td>
+<td style="text-align:right;">
+357.12500
+</td>
+<td style="text-align:right;">
+149.12991
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+50.42002
+</td>
+<td style="text-align:right;">
+1142.3450
+</td>
+<td style="text-align:right;">
+364.21500
+</td>
+<td style="text-align:right;">
+167.50823
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+50.70813
+</td>
+<td style="text-align:right;">
+1180.1450
+</td>
+<td style="text-align:right;">
+300.95499
+</td>
+<td style="text-align:right;">
+160.78876
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+54.15890
+</td>
+<td style="text-align:right;">
+1227.1200
+</td>
+<td style="text-align:right;">
+288.56499
+</td>
+<td style="text-align:right;">
+178.06728
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Oct
+</td>
+<td style="text-align:right;">
+58.38818
+</td>
+<td style="text-align:right;">
+1243.0100
+</td>
+<td style="text-align:right;">
+276.82001
+</td>
+<td style="text-align:right;">
+193.80437
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Nov
+</td>
+<td style="text-align:right;">
+65.15550
+</td>
+<td style="text-align:right;">
+1304.0050
+</td>
+<td style="text-align:right;">
+294.60500
+</td>
+<td style="text-align:right;">
+209.26199
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:left;">
+Dec
+</td>
+<td style="text-align:right;">
+69.38135
+</td>
+<td style="text-align:right;">
+1345.0200
+</td>
+<td style="text-align:right;">
+309.98999
+</td>
+<td style="text-align:right;">
+224.84549
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Jan
+</td>
+<td style="text-align:right;">
+77.63441
+</td>
+<td style="text-align:right;">
+1439.2000
+</td>
+<td style="text-align:right;">
+338.92001
+</td>
+<td style="text-align:right;">
+245.23787
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Feb
+</td>
+<td style="text-align:right;">
+79.54336
+</td>
+<td style="text-align:right;">
+1485.1100
+</td>
+<td style="text-align:right;">
+371.70999
+</td>
+<td style="text-align:right;">
+267.52768
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Mar
+</td>
+<td style="text-align:right;">
+63.35148
+</td>
+<td style="text-align:right;">
+1154.2850
+</td>
+<td style="text-align:right;">
+357.22000
+</td>
+<td style="text-align:right;">
+247.63786
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Apr
+</td>
+<td style="text-align:right;">
+68.71476
+</td>
+<td style="text-align:right;">
+1262.4700
+</td>
+<td style="text-align:right;">
+413.54999
+</td>
+<td style="text-align:right;">
+283.73560
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+May
+</td>
+<td style="text-align:right;">
+77.92825
+</td>
+<td style="text-align:right;">
+1379.8400
+</td>
+<td style="text-align:right;">
+434.90500
+</td>
+<td style="text-align:right;">
+330.80002
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Jun
+</td>
+<td style="text-align:right;">
+87.50597
+</td>
+<td style="text-align:right;">
+1436.1700
+</td>
+<td style="text-align:right;">
+435.30501
+</td>
+<td style="text-align:right;">
+366.46538
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Jul
+</td>
+<td style="text-align:right;">
+95.44292
+</td>
+<td style="text-align:right;">
+1514.5950
+</td>
+<td style="text-align:right;">
+493.07500
+</td>
+<td style="text-align:right;">
+408.74272
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Aug
+</td>
+<td style="text-align:right;">
+115.01000
+</td>
+<td style="text-align:right;">
+1518.4500
+</td>
+<td style="text-align:right;">
+492.31000
+</td>
+<td style="text-align:right;">
+485.39477
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:left;">
+Sep
+</td>
+<td style="text-align:right;">
+113.49000
+</td>
+<td style="text-align:right;">
+1519.2800
+</td>
+<td style="text-align:right;">
+490.64999
+</td>
+<td style="text-align:right;">
+505.51001
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="row-year-month-column-stockname.-1" class="section level2">
+<h2>3.3 Row: year, month; Column: stockname.</h2>
+<pre class="r"><code>stock_raw  %&gt;%
+    pivot_table(
+        .rows    = c(~ symbol, ~ YEAR(date)),
+        .columns =  ~ MONTH(date, label = TRUE),
+        .values  = ~ MEDIAN(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1:2, ~ c(&quot;Symbol&quot;,&quot;Year&quot;)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;, height = &quot;400px&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 0px; overflow-y: scroll; height:400px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;position: sticky; top:0; background-color: #FFFFFF;">
+Symbol
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Year
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Jan
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Feb
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Mar
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Apr
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+May
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Jun
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Jul
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Aug
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Sep
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Oct
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Nov
+</th>
+<th style="text-align:right;position: sticky; top:0; background-color: #FFFFFF;">
+Dec
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+25.02021
+</td>
+<td style="text-align:right;">
+29.10524
+</td>
+<td style="text-align:right;">
+28.94721
+</td>
+<td style="text-align:right;">
+29.05256
+</td>
+<td style="text-align:right;">
+29.63619
+</td>
+<td style="text-align:right;">
+29.34755
+</td>
+<td style="text-align:right;">
+28.84388
+</td>
+<td style="text-align:right;">
+26.54056
+</td>
+<td style="text-align:right;">
+26.19864
+</td>
+<td style="text-align:right;">
+25.83477
+</td>
+<td style="text-align:right;">
+27.41634
+</td>
+<td style="text-align:right;">
+25.73422
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+22.59618
+</td>
+<td style="text-align:right;">
+22.38866
+</td>
+<td style="text-align:right;">
+24.46720
+</td>
+<td style="text-align:right;">
+25.31983
+</td>
+<td style="text-align:right;">
+22.03333
+</td>
+<td style="text-align:right;">
+22.82191
+</td>
+<td style="text-align:right;">
+23.00967
+</td>
+<td style="text-align:right;">
+25.48456
+</td>
+<td style="text-align:right;">
+26.59596
+</td>
+<td style="text-align:right;">
+27.44309
+</td>
+<td style="text-align:right;">
+26.21309
+</td>
+<td style="text-align:right;">
+27.47014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+28.43191
+</td>
+<td style="text-align:right;">
+32.16285
+</td>
+<td style="text-align:right;">
+33.34674
+</td>
+<td style="text-align:right;">
+34.14473
+</td>
+<td style="text-align:right;">
+36.64409
+</td>
+<td style="text-align:right;">
+34.88603
+</td>
+<td style="text-align:right;">
+35.70407
+</td>
+<td style="text-align:right;">
+38.28973
+</td>
+<td style="text-align:right;">
+38.09670
+</td>
+<td style="text-align:right;">
+37.53960
+</td>
+<td style="text-align:right;">
+41.70878
+</td>
+<td style="text-align:right;">
+41.30392
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+42.01243
+</td>
+<td style="text-align:right;">
+40.49957
+</td>
+<td style="text-align:right;">
+42.41845
+</td>
+<td style="text-align:right;">
+41.14806
+</td>
+<td style="text-align:right;">
+45.44227
+</td>
+<td style="text-align:right;">
+45.87101
+</td>
+<td style="text-align:right;">
+46.37383
+</td>
+<td style="text-align:right;">
+51.99916
+</td>
+<td style="text-align:right;">
+53.94437
+</td>
+<td style="text-align:right;">
+53.78592
+</td>
+<td style="text-align:right;">
+46.82114
+</td>
+<td style="text-align:right;">
+40.47836
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:right;">
+37.62130
+</td>
+<td style="text-align:right;">
+41.99081
+</td>
+<td style="text-align:right;">
+45.72240
+</td>
+<td style="text-align:right;">
+49.15674
+</td>
+<td style="text-align:right;">
+46.56679
+</td>
+<td style="text-align:right;">
+47.96505
+</td>
+<td style="text-align:right;">
+50.42002
+</td>
+<td style="text-align:right;">
+50.70813
+</td>
+<td style="text-align:right;">
+54.15890
+</td>
+<td style="text-align:right;">
+58.38818
+</td>
+<td style="text-align:right;">
+65.15550
+</td>
+<td style="text-align:right;">
+69.38135
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:right;">
+77.63441
+</td>
+<td style="text-align:right;">
+79.54336
+</td>
+<td style="text-align:right;">
+63.35148
+</td>
+<td style="text-align:right;">
+68.71476
+</td>
+<td style="text-align:right;">
+77.92825
+</td>
+<td style="text-align:right;">
+87.50597
+</td>
+<td style="text-align:right;">
+95.44292
+</td>
+<td style="text-align:right;">
+115.01000
+</td>
+<td style="text-align:right;">
+113.49000
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+507.64626
+</td>
+<td style="text-align:right;">
+535.46985
+</td>
+<td style="text-align:right;">
+556.85864
+</td>
+<td style="text-align:right;">
+537.69379
+</td>
+<td style="text-align:right;">
+536.53000
+</td>
+<td style="text-align:right;">
+534.29999
+</td>
+<td style="text-align:right;">
+601.70499
+</td>
+<td style="text-align:right;">
+637.60999
+</td>
+<td style="text-align:right;">
+621.34998
+</td>
+<td style="text-align:right;">
+651.47498
+</td>
+<td style="text-align:right;">
+732.50500
+</td>
+<td style="text-align:right;">
+752.07498
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+714.71997
+</td>
+<td style="text-align:right;">
+698.66501
+</td>
+<td style="text-align:right;">
+732.01001
+</td>
+<td style="text-align:right;">
+743.09003
+</td>
+<td style="text-align:right;">
+711.12000
+</td>
+<td style="text-align:right;">
+713.45499
+</td>
+<td style="text-align:right;">
+727.36502
+</td>
+<td style="text-align:right;">
+773.17999
+</td>
+<td style="text-align:right;">
+774.21002
+</td>
+<td style="text-align:right;">
+785.94000
+</td>
+<td style="text-align:right;">
+764.47998
+</td>
+<td style="text-align:right;">
+789.28998
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+806.11002
+</td>
+<td style="text-align:right;">
+819.23999
+</td>
+<td style="text-align:right;">
+831.50000
+</td>
+<td style="text-align:right;">
+837.16998
+</td>
+<td style="text-align:right;">
+933.11499
+</td>
+<td style="text-align:right;">
+952.83502
+</td>
+<td style="text-align:right;">
+945.49500
+</td>
+<td style="text-align:right;">
+922.90002
+</td>
+<td style="text-align:right;">
+928.80502
+</td>
+<td style="text-align:right;">
+981.67001
+</td>
+<td style="text-align:right;">
+1028.06995
+</td>
+<td style="text-align:right;">
+1047.27002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+1129.79004
+</td>
+<td style="text-align:right;">
+1094.80005
+</td>
+<td style="text-align:right;">
+1095.06006
+</td>
+<td style="text-align:right;">
+1029.27002
+</td>
+<td style="text-align:right;">
+1077.12500
+</td>
+<td style="text-align:right;">
+1136.88000
+</td>
+<td style="text-align:right;">
+1186.95996
+</td>
+<td style="text-align:right;">
+1224.77002
+</td>
+<td style="text-align:right;">
+1173.37000
+</td>
+<td style="text-align:right;">
+1101.16003
+</td>
+<td style="text-align:right;">
+1055.81006
+</td>
+<td style="text-align:right;">
+1039.45996
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:right;">
+1073.90002
+</td>
+<td style="text-align:right;">
+1115.13000
+</td>
+<td style="text-align:right;">
+1184.26001
+</td>
+<td style="text-align:right;">
+1217.87000
+</td>
+<td style="text-align:right;">
+1156.86005
+</td>
+<td style="text-align:right;">
+1080.64502
+</td>
+<td style="text-align:right;">
+1142.34497
+</td>
+<td style="text-align:right;">
+1180.14496
+</td>
+<td style="text-align:right;">
+1227.12000
+</td>
+<td style="text-align:right;">
+1243.01001
+</td>
+<td style="text-align:right;">
+1304.00500
+</td>
+<td style="text-align:right;">
+1345.02002
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:right;">
+1439.19995
+</td>
+<td style="text-align:right;">
+1485.10999
+</td>
+<td style="text-align:right;">
+1154.28497
+</td>
+<td style="text-align:right;">
+1262.46997
+</td>
+<td style="text-align:right;">
+1379.83997
+</td>
+<td style="text-align:right;">
+1436.16998
+</td>
+<td style="text-align:right;">
+1514.59503
+</td>
+<td style="text-align:right;">
+1518.44995
+</td>
+<td style="text-align:right;">
+1519.28003
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+49.01000
+</td>
+<td style="text-align:right;">
+66.58572
+</td>
+<td style="text-align:right;">
+61.66857
+</td>
+<td style="text-align:right;">
+79.50000
+</td>
+<td style="text-align:right;">
+85.94286
+</td>
+<td style="text-align:right;">
+93.86000
+</td>
+<td style="text-align:right;">
+106.66500
+</td>
+<td style="text-align:right;">
+121.15000
+</td>
+<td style="text-align:right;">
+99.48000
+</td>
+<td style="text-align:right;">
+105.89000
+</td>
+<td style="text-align:right;">
+114.05500
+</td>
+<td style="text-align:right;">
+119.89500
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+107.06000
+</td>
+<td style="text-align:right;">
+90.10000
+</td>
+<td style="text-align:right;">
+98.85500
+</td>
+<td style="text-align:right;">
+103.81000
+</td>
+<td style="text-align:right;">
+90.84000
+</td>
+<td style="text-align:right;">
+93.98500
+</td>
+<td style="text-align:right;">
+94.63500
+</td>
+<td style="text-align:right;">
+95.87000
+</td>
+<td style="text-align:right;">
+97.38000
+</td>
+<td style="text-align:right;">
+106.28000
+</td>
+<td style="text-align:right;">
+117.51000
+</td>
+<td style="text-align:right;">
+124.57000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+133.48000
+</td>
+<td style="text-align:right;">
+142.60001
+</td>
+<td style="text-align:right;">
+142.64999
+</td>
+<td style="text-align:right;">
+143.83000
+</td>
+<td style="text-align:right;">
+157.60500
+</td>
+<td style="text-align:right;">
+154.15000
+</td>
+<td style="text-align:right;">
+171.68000
+</td>
+<td style="text-align:right;">
+169.98000
+</td>
+<td style="text-align:right;">
+181.85500
+</td>
+<td style="text-align:right;">
+195.37500
+</td>
+<td style="text-align:right;">
+195.71001
+</td>
+<td style="text-align:right;">
+187.81000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+220.46001
+</td>
+<td style="text-align:right;">
+267.42999
+</td>
+<td style="text-align:right;">
+316.48001
+</td>
+<td style="text-align:right;">
+307.78000
+</td>
+<td style="text-align:right;">
+328.36000
+</td>
+<td style="text-align:right;">
+390.39002
+</td>
+<td style="text-align:right;">
+379.48001
+</td>
+<td style="text-align:right;">
+344.50000
+</td>
+<td style="text-align:right;">
+365.35998
+</td>
+<td style="text-align:right;">
+333.16000
+</td>
+<td style="text-align:right;">
+288.75000
+</td>
+<td style="text-align:right;">
+266.76999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:right;">
+328.89999
+</td>
+<td style="text-align:right;">
+356.97000
+</td>
+<td style="text-align:right;">
+358.82001
+</td>
+<td style="text-align:right;">
+367.64999
+</td>
+<td style="text-align:right;">
+355.02499
+</td>
+<td style="text-align:right;">
+357.12500
+</td>
+<td style="text-align:right;">
+364.21500
+</td>
+<td style="text-align:right;">
+300.95499
+</td>
+<td style="text-align:right;">
+288.56499
+</td>
+<td style="text-align:right;">
+276.82001
+</td>
+<td style="text-align:right;">
+294.60500
+</td>
+<td style="text-align:right;">
+309.98999
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:right;">
+338.92001
+</td>
+<td style="text-align:right;">
+371.70999
+</td>
+<td style="text-align:right;">
+357.22000
+</td>
+<td style="text-align:right;">
+413.54999
+</td>
+<td style="text-align:right;">
+434.90500
+</td>
+<td style="text-align:right;">
+435.30501
+</td>
+<td style="text-align:right;">
+493.07500
+</td>
+<td style="text-align:right;">
+492.31000
+</td>
+<td style="text-align:right;">
+490.64999
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+19.04836
+</td>
+<td style="text-align:right;">
+21.32043
+</td>
+<td style="text-align:right;">
+21.88099
+</td>
+<td style="text-align:right;">
+21.45574
+</td>
+<td style="text-align:right;">
+20.56658
+</td>
+<td style="text-align:right;">
+21.01132
+</td>
+<td style="text-align:right;">
+19.21507
+</td>
+<td style="text-align:right;">
+22.06502
+</td>
+<td style="text-align:right;">
+22.36727
+</td>
+<td style="text-align:right;">
+26.73542
+</td>
+<td style="text-align:right;">
+30.15166
+</td>
+<td style="text-align:right;">
+32.26404
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+28.08973
+</td>
+<td style="text-align:right;">
+27.60525
+</td>
+<td style="text-align:right;">
+32.29809
+</td>
+<td style="text-align:right;">
+35.62809
+</td>
+<td style="text-align:right;">
+41.44331
+</td>
+<td style="text-align:right;">
+46.09111
+</td>
+<td style="text-align:right;">
+52.29076
+</td>
+<td style="text-align:right;">
+60.70966
+</td>
+<td style="text-align:right;">
+62.27846
+</td>
+<td style="text-align:right;">
+66.63953
+</td>
+<td style="text-align:right;">
+86.79716
+</td>
+<td style="text-align:right;">
+97.53977
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+103.87871
+</td>
+<td style="text-align:right;">
+109.58504
+</td>
+<td style="text-align:right;">
+102.70877
+</td>
+<td style="text-align:right;">
+99.69115
+</td>
+<td style="text-align:right;">
+129.09587
+</td>
+<td style="text-align:right;">
+150.06064
+</td>
+<td style="text-align:right;">
+161.81708
+</td>
+<td style="text-align:right;">
+163.57018
+</td>
+<td style="text-align:right;">
+169.98914
+</td>
+<td style="text-align:right;">
+193.44343
+</td>
+<td style="text-align:right;">
+209.52241
+</td>
+<td style="text-align:right;">
+192.52633
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+222.64328
+</td>
+<td style="text-align:right;">
+239.48735
+</td>
+<td style="text-align:right;">
+240.06297
+</td>
+<td style="text-align:right;">
+224.56834
+</td>
+<td style="text-align:right;">
+245.94579
+</td>
+<td style="text-align:right;">
+260.50302
+</td>
+<td style="text-align:right;">
+247.63086
+</td>
+<td style="text-align:right;">
+255.69580
+</td>
+<td style="text-align:right;">
+270.16583
+</td>
+<td style="text-align:right;">
+238.03732
+</td>
+<td style="text-align:right;">
+188.35884
+</td>
+<td style="text-align:right;">
+145.68298
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:right;">
+144.46939
+</td>
+<td style="text-align:right;">
+153.61023
+</td>
+<td style="text-align:right;">
+168.23836
+</td>
+<td style="text-align:right;">
+187.46701
+</td>
+<td style="text-align:right;">
+158.34520
+</td>
+<td style="text-align:right;">
+149.12991
+</td>
+<td style="text-align:right;">
+167.50823
+</td>
+<td style="text-align:right;">
+160.78876
+</td>
+<td style="text-align:right;">
+178.06728
+</td>
+<td style="text-align:right;">
+193.80437
+</td>
+<td style="text-align:right;">
+209.26199
+</td>
+<td style="text-align:right;">
+224.84549
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:right;">
+245.23787
+</td>
+<td style="text-align:right;">
+267.52768
+</td>
+<td style="text-align:right;">
+247.63786
+</td>
+<td style="text-align:right;">
+283.73560
+</td>
+<td style="text-align:right;">
+330.80002
+</td>
+<td style="text-align:right;">
+366.46538
+</td>
+<td style="text-align:right;">
+408.74272
+</td>
+<td style="text-align:right;">
+485.39477
+</td>
+<td style="text-align:right;">
+505.51001
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+<td style="text-align:right;">
+NA
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="row-year-column-stockname" class="section level2">
+<h2>3.4 Row: year; Column: stockname</h2>
+<pre class="r"><code>stock_raw  %&gt;%
+    pivot_table(
+        .rows    = ~ YEAR(date),
+        .columns =  ~ symbol,
+        .values  = ~ PCT_CHANGE_FIRSTLAST(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1, ~ c(&quot;Year&quot;)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:right;">
+Year
+</th>
+<th style="text-align:right;">
+AAPL
+</th>
+<th style="text-align:right;">
+GOOG
+</th>
+<th style="text-align:right;">
+NFLX
+</th>
+<th style="text-align:right;">
+NVDA
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+2015
+</td>
+<td style="text-align:right;">
+-0.0208225
+</td>
+<td style="text-align:right;">
+0.4499790
+</td>
+<td style="text-align:right;">
+1.2945491
+</td>
+<td style="text-align:right;">
+0.6645144
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2016
+</td>
+<td style="text-align:right;">
+0.1238433
+</td>
+<td style="text-align:right;">
+0.0404130
+</td>
+<td style="text-align:right;">
+0.1258640
+</td>
+<td style="text-align:right;">
+2.3291963
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2017
+</td>
+<td style="text-align:right;">
+0.4804252
+</td>
+<td style="text-align:right;">
+0.3310606
+</td>
+<td style="text-align:right;">
+0.5056868
+</td>
+<td style="text-align:right;">
+0.9042632
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2018
+</td>
+<td style="text-align:right;">
+-0.0705435
+</td>
+<td style="text-align:right;">
+-0.0275963
+</td>
+<td style="text-align:right;">
+0.3311782
+</td>
+<td style="text-align:right;">
+-0.3284550
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2019
+</td>
+<td style="text-align:right;">
+0.8874244
+</td>
+<td style="text-align:right;">
+0.2784052
+</td>
+<td style="text-align:right;">
+0.2088844
+</td>
+<td style="text-align:right;">
+0.7340989
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+2020
+</td>
+<td style="text-align:right;">
+0.5529742
+</td>
+<td style="text-align:right;">
+0.0747639
+</td>
+<td style="text-align:right;">
+0.5161153
+</td>
+<td style="text-align:right;">
+1.2589844
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="row-stockname-columnyear" class="section level2">
+<h2>3.5 Row: stockname; Column:year</h2>
+<pre class="r"><code>stock_raw  %&gt;%
+    pivot_table(
+        .rows    = ~ symbol,
+        .columns =  ~ YEAR(date),
+        .values  = ~ PCT_CHANGE_FIRSTLAST(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1, ~ c(&quot;Symbol&quot;)) %&gt;% 
+  knitr::kable() %&gt;% 
+  kable_paper() %&gt;%
+  scroll_box(width = &quot;100%&quot;)</code></pre>
+<div style="border: 1px solid #ddd; padding: 5px; overflow-x: scroll; width:100%; ">
+<table class=" lightable-paper" style='font-family: "Arial Narrow", arial, helvetica, sans-serif; margin-left: auto; margin-right: auto;'>
+<thead>
+<tr>
+<th style="text-align:left;">
+Symbol
+</th>
+<th style="text-align:right;">
+2015
+</th>
+<th style="text-align:right;">
+2016
+</th>
+<th style="text-align:right;">
+2017
+</th>
+<th style="text-align:right;">
+2018
+</th>
+<th style="text-align:right;">
+2019
+</th>
+<th style="text-align:right;">
+2020
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+AAPL
+</td>
+<td style="text-align:right;">
+-0.0208225
+</td>
+<td style="text-align:right;">
+0.1238433
+</td>
+<td style="text-align:right;">
+0.4804252
+</td>
+<td style="text-align:right;">
+-0.0705435
+</td>
+<td style="text-align:right;">
+0.8874244
+</td>
+<td style="text-align:right;">
+0.5529742
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+GOOG
+</td>
+<td style="text-align:right;">
+0.4499790
+</td>
+<td style="text-align:right;">
+0.0404130
+</td>
+<td style="text-align:right;">
+0.3310606
+</td>
+<td style="text-align:right;">
+-0.0275963
+</td>
+<td style="text-align:right;">
+0.2784052
+</td>
+<td style="text-align:right;">
+0.0747639
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NFLX
+</td>
+<td style="text-align:right;">
+1.2945491
+</td>
+<td style="text-align:right;">
+0.1258640
+</td>
+<td style="text-align:right;">
+0.5056868
+</td>
+<td style="text-align:right;">
+0.3311782
+</td>
+<td style="text-align:right;">
+0.2088844
+</td>
+<td style="text-align:right;">
+0.5161153
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+NVDA
+</td>
+<td style="text-align:right;">
+0.6645144
+</td>
+<td style="text-align:right;">
+2.3291963
+</td>
+<td style="text-align:right;">
+0.9042632
+</td>
+<td style="text-align:right;">
+-0.3284550
+</td>
+<td style="text-align:right;">
+0.7340989
+</td>
+<td style="text-align:right;">
+1.2589844
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="pivot-chart" class="section level1">
+<h1>Pivot chart</h1>
+<pre class="r"><code>color_fill &lt;- &quot;#1ecbe1&quot;
+
+pivot_table_gt &lt;- stock_raw  %&gt;%
+    pivot_table(
+        .rows    = ~ YEAR(date),
+        .columns =  ~ symbol,
+        .values  = ~ PCT_CHANGE_FIRSTLAST(adjusted)
+    ) %&gt;%
+    rename_at(.vars = 1, ~ c(&quot;Year&quot;)) %&gt;% 
+    gt() %&gt;%
+    tab_header(&quot;Stock Returns&quot;, subtitle = md(&quot;_Technology Portfolio_&quot;)) %&gt;%
+    fmt_percent(columns = vars(AAPL, GOOG, NFLX, NVDA)) %&gt;%
+    tab_spanner(
+        label = &quot;Performance&quot;,
+        columns = vars(AAPL, GOOG, NFLX, NVDA)
+    ) %&gt;%
+    tab_source_note(
+        source_note = md(&quot;_Data Source:_ Stock data retreived from Yahoo! Finance via tidyquant.&quot;)
+    ) %&gt;%
+    tab_style(
+        style = list(
+            cell_fill(color = color_fill),
+            cell_text(weight = &quot;bold&quot;, color = &quot;white&quot;)
+        ),
+        locations = cells_body(
+            columns = vars(AAPL),
+            rows    = AAPL &gt;= 0)
+    ) %&gt;%
+    tab_style(
+        style = list(
+            cell_fill(color = color_fill),
+            cell_text(weight = &quot;bold&quot;, color = &quot;white&quot;)
+        ),
+        locations = cells_body(
+            columns = vars(GOOG),
+            rows    = GOOG &gt;= 0)
+    ) %&gt;%
+    tab_style(
+        style = list(
+            cell_fill(color = color_fill),
+            cell_text(weight = &quot;bold&quot;, color = &quot;white&quot;)
+        ),
+        locations = cells_body(
+            columns = vars(NFLX),
+            rows    = NFLX &gt;= 0)
+    ) %&gt;%
+    tab_style(
+        style = list(
+            cell_fill(color = color_fill),
+            cell_text(weight = &quot;bold&quot;, color = &quot;white&quot;)
+        ),
+        locations = cells_body(
+            columns = vars(NVDA),
+            rows    = NVDA &gt;= 0)
+    )
+
+pivot_table_gt</code></pre>
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#mloovvcvdx .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#mloovvcvdx .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 4px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#mloovvcvdx .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#mloovvcvdx .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#mloovvcvdx .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#mloovvcvdx .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#mloovvcvdx .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#mloovvcvdx .gt_group_heading {
+  padding: 8px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#mloovvcvdx .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#mloovvcvdx .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#mloovvcvdx .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#mloovvcvdx .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#mloovvcvdx .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 12px;
+}
+
+#mloovvcvdx .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mloovvcvdx .gt_first_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#mloovvcvdx .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#mloovvcvdx .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding: 4px;
+}
+
+#mloovvcvdx .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#mloovvcvdx .gt_sourcenote {
+  font-size: 90%;
+  padding: 4px;
+}
+
+#mloovvcvdx .gt_left {
+  text-align: left;
+}
+
+#mloovvcvdx .gt_center {
+  text-align: center;
+}
+
+#mloovvcvdx .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#mloovvcvdx .gt_font_normal {
+  font-weight: normal;
+}
+
+#mloovvcvdx .gt_font_bold {
+  font-weight: bold;
+}
+
+#mloovvcvdx .gt_font_italic {
+  font-style: italic;
+}
+
+#mloovvcvdx .gt_super {
+  font-size: 65%;
+}
+
+#mloovvcvdx .gt_footnote_marks {
+  font-style: italic;
+  font-size: 65%;
+}
+</style>
+<div id="mloovvcvdx" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;"><table class="gt_table">
+  <thead class="gt_header">
+    <tr>
+      <th colspan="5" class="gt_heading gt_title gt_font_normal" style>Stock Returns</th>
+    </tr>
+    <tr>
+      <th colspan="5" class="gt_heading gt_subtitle gt_font_normal gt_bottom_border" style><em>Technology Portfolio</em></th>
+    </tr>
+  </thead>
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_col_heading gt_center gt_columns_bottom_border" rowspan="2" colspan="1">Year</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="4">
+        <span class="gt_column_spanner">Performance</span>
+      </th>
+    </tr>
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">AAPL</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">GOOG</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">NFLX</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1">NVDA</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr>
+      <td class="gt_row gt_right">2015</td>
+      <td class="gt_row gt_right">&minus;2.08&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">45.00&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">129.45&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">66.45&percnt;</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_right">2016</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">12.38&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">4.04&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">12.59&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">232.92&percnt;</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_right">2017</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">48.04&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">33.11&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">50.57&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">90.43&percnt;</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_right">2018</td>
+      <td class="gt_row gt_right">&minus;7.05&percnt;</td>
+      <td class="gt_row gt_right">&minus;2.76&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">33.12&percnt;</td>
+      <td class="gt_row gt_right">&minus;32.85&percnt;</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_right">2019</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">88.74&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">27.84&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">20.89&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">73.41&percnt;</td>
+    </tr>
+    <tr>
+      <td class="gt_row gt_right">2020</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">55.30&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">7.48&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">51.61&percnt;</td>
+      <td class="gt_row gt_right" style="background-color: #1ECBE1; color: white; font-weight: bold;">125.90&percnt;</td>
+    </tr>
+  </tbody>
+  <tfoot class="gt_sourcenotes">
+    <tr>
+      <td class="gt_sourcenote" colspan="5"><em>Data Source:</em> Stock data retreived from Yahoo! Finance via tidyquant.</td>
+    </tr>
+  </tfoot>
+  
+</table></div>
+<p>You can save the chart with <code>gtsave</code>, maybe <code>Phantom JS</code> required.</p>
+<pre class="r"><code>library(webshot)
+pivot_table_gt %&gt;% gtsave(filename = &quot;folder/file.png&quot;)</code></pre>
+</div>
+<div id="reference" class="section level1">
+<h1>Reference</h1>
+<ol style="list-style-type: decimal">
+<li><p><a href="https://www.youtube.com/watch?v=K5qR-EREf_g">How to make excel pivot tables in R</a></p></li>
+<li><p><a href="https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html">Create Awesome HTML Table with knitr::kable and kableExtra</a></p></li>
+</ol>
+</div>
